@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Genie - Figma Auth Redirect</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 {
+      margin-top: 0;
+      color: #0078d7;
+    }
+    p {
+      line-height: 1.5;
+      margin: 20px 0;
+    }
+    .button {
+      background-color: #0078d7;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+      margin-top: 20px;
+      display: inline-block;
+    }
+    .button:hover {
+      background-color: #005a9e;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .error {
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>UI Genie Figma Authentication</h1>
+    <p>Authentication complete! Redirecting you back to VS Code...</p>
+    <div id="status">Processing...</div>
+    <a id="manual-btn" class="button" style="display: none;">Open VS Code Manually</a>
+  </div>
+
+  <script>
+    // Function to parse URL parameters
+    function getUrlParams() {
+      const params = {};
+      const queryString = window.location.search.substring(1);
+      const pairs = queryString.split('&');
+      
+      for (const pair of pairs) {
+        const [key, value] = pair.split('=');
+        if (key && value) {
+          params[decodeURIComponent(key)] = decodeURIComponent(value);
+        }
+      }
+      
+      return params;
+    }
+
+    // Get URL parameters
+    const params = getUrlParams();
+    const statusElement = document.getElementById('status');
+    const manualButton = document.getElementById('manual-btn');
+    
+    // Process the OAuth response
+    if (params.code) {
+      // Construct the VS Code URI with the authorization code
+      const vsCodeUri = `vscode://ui-genie-vscode/callback?code=${params.code}`;
+      if (params.state) {
+        vsCodeUri += `&state=${params.state}`;
+      }
+      
+      // Set up the manual button as fallback
+      manualButton.href = vsCodeUri;
+      manualButton.textContent = 'Click to Open VS Code';
+      
+      // Try to redirect automatically
+      try {
+        window.location.href = vsCodeUri;
+        
+        // If we're still here after a delay, show manual button
+        setTimeout(() => {
+          statusElement.textContent = 'Automatic redirect failed. Please use the button below:';
+          manualButton.style.display = 'inline-block';
+        }, 3000);
+      } catch (error) {
+        statusElement.textContent = 'Failed to redirect automatically: ' + error.message;
+        statusElement.className = 'error';
+        manualButton.style.display = 'inline-block';
+      }
+    } else if (params.error) {
+      // Handle error
+      statusElement.textContent = `Authentication error: ${params.error}`;
+      statusElement.className = 'error';
+      manualButton.style.display = 'none';
+    } else {
+      // No code or error parameter
+      statusElement.textContent = 'Invalid callback - no authorization code received.';
+      statusElement.className = 'error';
+      manualButton.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
