@@ -163,26 +163,38 @@
         }
       }, 100);
       
-      // Try VSCode protocol handler
+      // Try VSCode protocol handler with improved window focusing
       try {
-        let vsCodeUri = `vscode://ui-genie-vscode/callback?code=${params.code}`;
+        let vsCodeUri = `vscode://uigenie/callback?code=${params.code}`;
         if (params.state) {
           vsCodeUri += `&state=${params.state}`;
         }
         
-        // Try to open automatically but don't rely on it
-        const hiddenLink = document.createElement('a');
-        hiddenLink.style.display = 'none';
-        hiddenLink.href = vsCodeUri;
-        document.body.appendChild(hiddenLink);
+        console.log('Attempting to redirect to VSCode with URI:', vsCodeUri);
         
+        // Create a visible button that users can click if automatic redirection doesn't work
+        const manualButton = document.createElement('button');
+        manualButton.innerText = 'Click to Open VSCode';
+        manualButton.className = 'button';
+        manualButton.style.marginTop = '20px';
+        manualButton.onclick = function() {
+          window.location.href = vsCodeUri;
+        };
+        document.getElementById('main-content').appendChild(manualButton);
+        
+        // Try multiple methods to open VSCode and focus it
+        // Method 1: Using window.location (most reliable for focusing)
+        window.location.href = vsCodeUri;
+        
+        // Method 2: As fallback, try opening in a new window
         setTimeout(() => {
           try {
-            hiddenLink.click();
+            console.log('Trying alternate method to focus VSCode...');
+            window.open(vsCodeUri, '_blank');
           } catch (e) {
-            console.log('Auto-open failed, user will need to manually copy code');
+            console.log('Second redirect attempt failed:', e);
           }
-        }, 1000);
+        }, 1500);
       } catch (error) {
         console.log('Error setting up VSCode link');
       }
