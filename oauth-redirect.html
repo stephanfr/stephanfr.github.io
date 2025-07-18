@@ -165,36 +165,72 @@
       
       // Try VSCode protocol handler with improved window focusing
       try {
-        let vsCodeUri = `vscode://uigenie/callback?code=${params.code}`;
+        // Use the correct URI format with extension ID as authority (publisher.name)
+        let vsCodeUri = `vscode://Cisco.magnetic-ui-genie/callback?code=${params.code}`;
         if (params.state) {
           vsCodeUri += `&state=${params.state}`;
         }
         
+        // Extra debug logging
+        console.log('Using URI format with extension ID as authority:')
+        console.log('URI: ' + vsCodeUri);
+        
         console.log('Attempting to redirect to VSCode with URI:', vsCodeUri);
         
-        // Create a visible button that users can click if automatic redirection doesn't work
-        const manualButton = document.createElement('button');
-        manualButton.innerText = 'Click to Open VSCode';
-        manualButton.className = 'button';
-        manualButton.style.marginTop = '20px';
-        manualButton.onclick = function() {
+        // Display URI and debug info
+        const debugInfo = document.createElement('div');
+        debugInfo.className = 'debug-info';
+        debugInfo.innerHTML = `
+          <details>
+            <summary>Debug Information</summary>
+            <p>VSCode URI: <code>${vsCodeUri}</code></p>
+            <p>Auth code: <code>${params.code.substring(0, 5)}...</code> (truncated)</p>
+            <p>State: <code>${params.state || 'Not provided'}</code></p>
+            <p>This URI uses the format compatible with your refactored FigmaDocumentLoader</p>
+          </details>
+        `;
+        document.getElementById('main-content').appendChild(debugInfo);
+        
+        // Create button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'button-container';
+        buttonContainer.style.marginTop = '20px';
+        
+        // Button for VSCode URI
+        const openButton = document.createElement('button');
+        openButton.innerText = 'Open in VSCode';
+        openButton.className = 'button';
+        openButton.onclick = function() {
           window.location.href = vsCodeUri;
         };
-        document.getElementById('main-content').appendChild(manualButton);
+        
+        buttonContainer.appendChild(openButton);
+        document.getElementById('main-content').appendChild(buttonContainer);
         
         // Try multiple methods to open VSCode and focus it
         // Method 1: Using window.location (most reliable for focusing)
         window.location.href = vsCodeUri;
         
-        // Method 2: As fallback, try opening in a new window
+        // Method 2: As fallback, try opening in a new window after a delay
         setTimeout(() => {
           try {
             console.log('Trying alternate method to focus VSCode...');
             window.open(vsCodeUri, '_blank');
           } catch (e) {
             console.log('Second redirect attempt failed:', e);
+            
+            // Show message to user if automatic methods fail
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.style.marginTop = '10px';
+            message.style.padding = '10px';
+            message.style.backgroundColor = '#f8d7da';
+            message.style.color = '#721c24';
+            message.style.borderRadius = '4px';
+            message.innerHTML = 'Automatic VSCode launch failed. Please click the "Open in VSCode" button above.';
+            document.getElementById('main-content').appendChild(message);
           }
-        }, 1500);
+        }, 500);
       } catch (error) {
         console.log('Error setting up VSCode link');
       }
